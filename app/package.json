@@ -6,13 +6,14 @@
     "type": "module",
     "scripts": {
         "start": "node index.js",
-        "test": "mocha './tests/*.js'"
+        "test": "mocha -r esm './tests/*.js'"
     },
     "dependencies": {
         "express": "^4.17.1"
     },
     "devDependencies": {
         "chai": "^5.1.1",
+        "esm": "^3.2.25",
         "mocha": "^10.7.3",
         "supertest": "^7.0.0"
     }
