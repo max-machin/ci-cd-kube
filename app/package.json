@@ -3,12 +3,17 @@
     "version": "1.0.0",
     "description": "A simple Express.js app",
     "main": "index.js",
+    "type": "module",
     "scripts": {
-      "start": "node index.js",
-      "test": "echo \"No tests yet\" && exit 0"
+        "start": "node index.js",
+        "test": "mocha './tests/*.js'"
     },
     "dependencies": {
-      "express": "^4.17.1"
+        "express": "^4.17.1"
+    },
+    "devDependencies": {
+        "chai": "^5.1.1",
+        "mocha": "^10.7.3",
+        "supertest": "^7.0.0"
     }
-  }
-  
+}

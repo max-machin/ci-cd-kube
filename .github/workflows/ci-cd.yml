@@ -1,36 +1,42 @@
 name: Node.js CI/CD
 
+# A chaque push / pull request ou création de tag sur la branch main 
 on:
   push:
     branches: 
       - main
     tags:
-      - '*'  # Déclenche le workflow pour n'importe quel tag
+      - '*' 
   pull_request:
     branches:
       - main
 
+# 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        node-version: [14.x, 16.x]  # Tester sur différentes versions de Node.js
+        node-version: [14.x, 16.x]
 
     steps:
+    # 1 - Récupérer le code 
     - name: Checkout code
       uses: actions/checkout@v2
 
+    # 2 - Configuration Node.js
     - name: Setup Node.js
       uses: actions/setup-node@v2
       with:
         node-version: ${{ matrix.node-version }}
 
+    # 3 - Installer les dépendances 
     - name: Install dependencies
       run: npm i
       working-directory: ./app
-
+    
+    # 4 - Execution de tests 
     - name: Run Tests
       run: npm test
       working-directory: ./app
