@@ -6,7 +6,7 @@
     "type": "module",
     "scripts": {
         "start": "node index.js",
-        "test": "mocha -r esm './tests/*.js'"
+        "test": "mocha './tests/*.js'"
     },
     "dependencies": {
         "express": "^4.17.1"
