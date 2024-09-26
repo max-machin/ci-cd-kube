@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [14.x, 16.x]  # Choisir la version de Node.js que tu veux tester
+        node-version: [16]  # Choisir la version de Node.js que tu veux tester
 
     steps:
     - name: Checkout code
