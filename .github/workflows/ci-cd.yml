@@ -50,6 +50,23 @@ jobs:
       run: |
         docker push machinmax13/ci-cd:${{ github.sha }}
 
+    # Démarrer Minikube
+    - name: Start Minikube
+      run: |
+        minikube start
+        eval $(minikube docker-env)  # Configure Docker to use Minikube's Docker daemon
+
+    # Construire l'image Docker pour Minikube
+    - name: Build Docker image for Minikube
+      run: |
+        cd express-app
+        docker build -t myapp:latest .
+
+    # Déploiement sur Kubernetes via Minikube
+    - name: Deploy to Kubernetes
+      run: |
+        kubectl apply -f ./k8s/deployment.yaml
+
     # Envoyer une notification Google Chat après le succès du déploiement
     - name: Send Success Notification to Google Chat
       if: success()
