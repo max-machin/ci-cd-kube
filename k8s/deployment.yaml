@@ -1,22 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ci-cd-deployment
+  name: myapp
 spec:
-  replicas: 1
+  replicas: 1  # Nombre de réplicas souhaités
   selector:
     matchLabels:
-      app: ci-cd
+      app: myapp  # Étiquette à matcher avec le service
   template:
     metadata:
       labels:
-        app: ci-cd
+        app: myapp  # Étiquetage du pod
     spec:
       containers:
-      - name: ci-cd
-        image: machinmax13/ci-cd:latest  # Assurez-vous d'utiliser le bon tag
+      - name: myapp
+        image: machinmax13/ci-cd:latest  # Assurez-vous que l'image est correcte
         ports:
-        - containerPort: 8080  # Changez ce port selon ce que votre application utilise
+        - containerPort: 8080  # Port que l'application écoute
+
 
 ---
 apiVersion: v1
