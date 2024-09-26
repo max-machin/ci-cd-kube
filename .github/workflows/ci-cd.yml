@@ -46,24 +46,28 @@ jobs:
     - name: Log in to Docker Hub
       run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-    - name: Push Docker image
+    # Installer kubectl
+    - name: Set up kubectl
       run: |
-        docker push machinmax13/ci-cd:${{ github.sha }}
+        curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
+        chmod +x ./kubectl
+        sudo mv ./kubectl /usr/local/bin/kubectl
 
     # Démarrer Minikube
     - name: Start Minikube
-      run: |
-        minikube start
-        eval $(minikube docker-env)  # Configure Docker to use Minikube's Docker daemon
+      run: minikube start
 
+    # Configurer l'environnement Docker de Minikube
+    - name: Set Minikube Docker environment
+      run: eval $(minikube docker-env)
+
+    # Construire l'image Docker pour Minikube
     - name: Build Docker image for Minikube
       run: |
-        cd express-app
-        docker build -t machinmax13/ci-cd:${{ github.sha }} .  # Utilisez le même tag
-    
+        docker build -t machinmax13/ci-cd:${{ github.sha }} ./express-app  # Utilisez le même tag
 
     # Déploiement sur Kubernetes via Minikube
-    - name: Deploy to Kubernetes
+    - name: Deploy to Minikube
       run: |
         kubectl apply -f ./k8s/deployment.yaml
 
