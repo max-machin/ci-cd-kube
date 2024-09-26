@@ -47,13 +47,6 @@ jobs:
       run: |
         docker push machinmax13/ci-cd:${{ env.TAG }}
 
-    - name: Send Notification to Google Chat
-      run: |
-        curl -X POST -H 'Content-Type: application/json' \
-        -d '{"text": "✅ Déploiement réussi pour le commit ${{ github.sha }} sur la branche ${{ github.ref_name }}."}' \
-        "${{ secrets.GOOGLE_CHAT_WEBHOOK }}"
-      if: success()
-
     - name: Deploy to Kubernetes
       run: |
         # Démarrer Minikube
@@ -66,3 +59,10 @@ jobs:
         # Appliquer les fichiers de déploiement Kubernetes
         kubectl apply -f ./k8s/deployment.yaml
         kubectl apply -f ./k8s/service.yaml
+
+    - name: Send Notification to Google Chat
+      run: |
+        curl -X POST -H 'Content-Type: application/json' \
+        -d '{"text": "✅ Déploiement réussi pour le commit ${{ github.sha }} sur la branche ${{ github.ref_name }}."}' \
+        "${{ secrets.GOOGLE_CHAT_WEBHOOK }}"
+      if: success()
