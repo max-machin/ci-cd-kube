@@ -49,3 +49,19 @@ jobs:
     - name: Push Docker image
       run: |
         docker push machinmax13/ci-cd:${{ github.sha }}
+
+    # Envoyer une notification Google Chat après le succès du déploiement
+    - name: Send Success Notification to Google Chat
+      if: success()
+      run: |
+        curl -X POST -H 'Content-Type: application/json' \
+        -d '{"text": "✅ Déploiement réussi pour le commit ${{ github.sha }} sur la branche ${{ github.ref_name }}."}' \
+        "${{ secrets.GOOGLE_CHAT_WEBHOOK }}"
+
+    # Envoyer une notification Google Chat en cas d'échec de la pipeline
+    - name: Send Failure Notification to Google Chat
+      if: failure()
+      run: |
+        curl -X POST -H 'Content-Type: application/json' \
+        -d '{"text": "❌ Échec du déploiement pour le commit ${{ github.sha }} sur la branche ${{ github.ref_name }}. Vérifiez les logs pour plus de détails."}' \
+        "${{ secrets.GOOGLE_CHAT_WEBHOOK }}"
