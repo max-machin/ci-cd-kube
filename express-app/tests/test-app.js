@@ -32,7 +32,7 @@ describe('GET /', () => {
     it('should return a 500 error for internal server error', (done) => {
         // Simuler une erreur interne pour un test
         chai.request(app)
-            .get('/error') // Assurez-vous que vous avez une route qui renvoie une erreur
+            .get('/error')
             .end((err, res) => {
                 should.not.exist(err);
                 res.status.should.equal(500);
