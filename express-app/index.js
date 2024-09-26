@@ -13,7 +13,7 @@ app.get('/unknown', (req, res) => {
 
 // Route pour tester une erreur 500
 app.get('/error', (req, res) => {
-  res.status(500).send('Internal Server Error');
+  res.status(502).send('Internal Server Error');
 });
 
 module.exports = app.listen(8080, () => {
