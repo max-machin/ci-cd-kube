@@ -1,9 +1,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: myapptest
+  name: myapp
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: myapp
@@ -13,7 +13,21 @@ spec:
         app: myapp
     spec:
       containers:
-      - name: myapp
-        image: machinmax13/ci-cd:latest  # Assurez-vous que cette image correspond à celle que vous avez poussée
-        ports:
-        - containerPort: 8080  # Modifiez si votre application utilise un autre port
+        - name: myapp
+          image: machinmax13/ci-cd:${{ github.sha }}
+          ports:
+            - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp-service
+spec:
+  type: NodePort
+  ports:
+    - port: 8080
+      targetPort: 8080
+      nodePort: 30000
+  selector:
+    app: myapp
+ 
