@@ -60,12 +60,12 @@ jobs:
     - name: Build Docker image for Minikube
       run: |
         cd express-app
-        docker build -t machinmax13/ci-cd:${{ github.sha }} .
+        docker build -t myapp:latest .
 
     # Déploiement sur Kubernetes via Minikube
     - name: Deploy to Kubernetes
       run: |
-        kubectl apply -f ./deployment.yaml 
+        kubectl apply -f ./k8s/deployment.yaml
 
     # Envoyer une notification Google Chat après le succès du déploiement
     - name: Send Success Notification to Google Chat
