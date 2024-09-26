@@ -60,7 +60,7 @@ jobs:
     - name: Build Docker image for Minikube
       run: |
         cd express-app
-        docker build -t machinmax13/ci-cd:${{ github.sha }}
+        docker build -t machinmax13/ci-cd:${{ github.sha }} .
 
     # Déploiement sur Kubernetes via Minikube
     - name: Deploy to Kubernetes
