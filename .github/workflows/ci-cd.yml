@@ -65,7 +65,7 @@ jobs:
     # Déploiement sur Kubernetes via Minikube
     - name: Deploy to Kubernetes
       run: |
-        kubectl apply -f ./k8s/deployment.yaml
+        kubectl apply -f ./deployment.yaml
 
     # Envoyer une notification Google Chat après le succès du déploiement
     - name: Send Success Notification to Google Chat
