@@ -23,13 +23,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: ci-cd-service
+  name: myapp-service
 spec:
   type: NodePort
   ports:
     - port: 8080  # Port utilisé par votre application
       targetPort: 8080
   selector:
-    app: ci-cd
+    app: myapp
 
  
