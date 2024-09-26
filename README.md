@@ -67,7 +67,7 @@ Avant de démarrer, vous devez installer :
 Le fichier `.github/workflows/node.js-ci.yml` automatise l'intégration et le déploiement. Voici un exemple de workflow :
 
 ```yaml
-name: Node.js CI/CD Pipeline
+name: Node.js CI
 
 on:
   push:
@@ -79,6 +79,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        node-version: [16]  # Choisir la version de Node.js que tu veux tester
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
@@ -86,7 +90,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v2
       with:
-        node-version: 16
+        node-version: ${{ matrix.node-version }}
 
     - name: Install dependencies
       working-directory: ./express-app
@@ -98,24 +102,56 @@ jobs:
 
     - name: Build Docker image
       run: |
-        docker build -t myusername/myapp:${{ github.sha }} ./express-app
+        docker build -t machinmax13/ci-cd:${{ github.sha }} ./express-app
 
     - name: Run Docker container for testing
       run: |
-        docker run -d --name myapp-test -p 8080:8080 myusername/myapp:${{ github.sha }}
-        sleep 5
-        curl -f http://localhost:8080 || exit 1
-        docker stop myapp-test
-        docker rm myapp-test
+        docker run -d --name ci-cd-test -p 8080:8080 machinmax13/ci-cd:${{ github.sha }}
+        sleep 5 # Attendre que l'application se lance
+        curl -f http://localhost:8080 || exit 1 # Vérifier si l'application répond
+        docker stop ci-cd-test
+        docker rm ci-cd-test
 
     - name: Log in to Docker Hub
       run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
     - name: Push Docker image
-      run: docker push myusername/myapp:${{ github.sha }}
+      run: |
+        docker push machinmax13/ci-cd:${{ github.sha }}
 
+    # Démarrer Minikube
+    - name: Start Minikube
+      run: |
+        minikube start
+        eval $(minikube docker-env)  # Configure Docker to use Minikube's Docker daemon
+
+    # Construire l'image Docker pour Minikube
+    - name: Build Docker image for Minikube
+      run: |
+        cd express-app
+        docker build -t myapp:latest .
+
+    # Déploiement sur Kubernetes via Minikube
     - name: Deploy to Kubernetes
-      run: kubectl apply -f ./k8s/deployment.yaml
+      run: |
+        kubectl apply -f ./deployment.yaml
+
+    # Envoyer une notification Google Chat après le succès du déploiement
+    - name: Send Success Notification to Google Chat
+      if: success()
+      run: |
+        curl -X POST -H 'Content-Type: application/json' \
+        -d '{"text": "✅ Déploiement réussi pour le commit ${{ github.sha }} sur la branche ${{ github.ref_name }}."}' \
+        "${{ secrets.GOOGLE_CHAT_WEBHOOK }}"
+
+    # Envoyer une notification Google Chat en cas d'échec de la pipeline
+    - name: Send Failure Notification to Google Chat
+      if: failure()
+      run: |
+        curl -X POST -H 'Content-Type: application/json' \
+        -d '{"text": "❌ Échec du déploiement pour le commit ${{ github.sha }} sur la branche ${{ github.ref_name }}. Vérifiez les logs pour plus de détails."}' \
+        "${{ secrets.GOOGLE_CHAT_WEBHOOK }}"
+
 ```
 
 ---
@@ -244,10 +280,10 @@ spec:
         app: myapp
     spec:
       containers:
-      - name: myapp
-        image: myusername/myapp:latest
-        ports:
-        - containerPort: 8080
+        - name: myapp
+          image: myapp:latest
+          ports:
+            - containerPort: 8080
 ---
 apiVersion: v1
 kind: Service
@@ -256,9 +292,9 @@ metadata:
 spec:
   type: NodePort
   ports:
-  - port: 8080
-    targetPort: 8080
-    nodePort: 30000
+    - port: 8080
+      targetPort: 8080
+      nodePort: 30000
   selector:
     app: myapp
 ```
