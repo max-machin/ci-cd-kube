@@ -24,7 +24,9 @@ jobs:
         node-version: ${{ matrix.node-version }}
 
     - name: Install dependencies
+      working-directory: ./express-app
       run: npm ci
 
     - name: Run Tests
+      working-directory: ./express-app
       run: npm test
