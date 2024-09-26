@@ -5,13 +5,13 @@ FROM node:14-alpine
 WORKDIR /usr/src/app
 
 # Copier les fichiers package.json et package-lock.json pour installer les dépendances
-COPY app/package*.json ./
+COPY express-app/package*.json ./
 
 # Installer les dépendances de l'application
 RUN npm install --production
 
 # Copier tout le code dans le conteneur
-COPY app/ .
+COPY express-app/ .
 
 # Exposer le port sur lequel l'application va tourner
 EXPOSE 3000
