@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [16]
+        node-version: [16]  # Choisir la version de Node.js que tu veux tester
 
     steps:
     - name: Checkout code
@@ -35,6 +35,14 @@ jobs:
       run: |
         docker build -t machinmax13/ci-cd:${{ github.sha }} ./express-app
 
+    - name: Run Docker container for testing
+      run: |
+        docker run -d --name ci-cd-test -p 8080:8080 machinmax13/ci-cd:${{ github.sha }}
+        sleep 5 # Attendre que l'application se lance
+        curl -f http://localhost:8080 || exit 1 # Vérifier si l'application répond
+        docker stop ci-cd-test
+        docker rm ci-cd-test
+
     - name: Log in to Docker Hub
       run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
@@ -42,17 +50,24 @@ jobs:
       run: |
         docker push machinmax13/ci-cd:${{ github.sha }}
 
-    # Mettre à jour le fichier deployment.yaml
-    - name: Update deployment.yaml with image SHA
+    # Démarrer Minikube
+    - name: Start Minikube
       run: |
-        sed -i "s|image: machinmax13/ci-cd:.*|image: machinmax13/ci-cd:${{ github.sha }}|g" deployment.yaml
+        minikube start
+        eval $(minikube docker-env)  # Configure Docker to use Minikube's Docker daemon
 
-    # Déployer sur Kubernetes
+    # Construire l'image Docker pour Minikube
+    - name: Build Docker image for Minikube
+      run: |
+        cd express-app
+        docker build -t machinmax13/ci-cd:${{ github.sha }}
+
+    # Déploiement sur Kubernetes via Minikube
     - name: Deploy to Kubernetes
       run: |
-        kubectl apply -f ./deployment.yaml
+        kubectl apply -f ./deployment.yaml 
 
-    # Notifications
+    # Envoyer une notification Google Chat après le succès du déploiement
     - name: Send Success Notification to Google Chat
       if: success()
       run: |
@@ -60,6 +75,7 @@ jobs:
         -d '{"text": "✅ Déploiement réussi pour le commit ${{ github.sha }} sur la branche ${{ github.ref_name }}."}' \
         "${{ secrets.GOOGLE_CHAT_WEBHOOK }}"
 
+    # Envoyer une notification Google Chat en cas d'échec de la pipeline
     - name: Send Failure Notification to Google Chat
       if: failure()
       run: |
