@@ -14,7 +14,6 @@ L'application est développée avec **Node.js** et **Express**, contenue dans un
 - [Tests de l'Application](#tests-de-lapplication)
 - [Configuration de la Notification Google Chat](#configuration-de-la-notification-google-chat)
 - [Déploiement sur Kubernetes](#déploiement-sur-kubernetes)
-- [Déploiement Local avec Minikube via GitHub Actions](#déploiement-local-avec-minikube-via-github-actions)
 - [Conclusion](#conclusion)
 
 ---
@@ -54,7 +53,7 @@ Avant de démarrer, vous devez installer :
 │   └── package-lock.json
 ├── .github
 │   └── workflows
-│       └── node.js-ci.yml
+│       └── ci-cd.yml
 ├── .gitignore
 ├── README.md
 └── Dockerfile
@@ -64,7 +63,7 @@ Avant de démarrer, vous devez installer :
 
 ## Workflow GitHub Actions
 
-Le fichier `.github/workflows/node.js-ci.yml` automatise l'intégration et le déploiement. Voici un exemple de workflow :
+Le fichier `.github/workflows/ci-cd.yml` automatise l'intégration et le déploiement. Voici un exemple de workflow :
 
 ```yaml
 name: Node.js CI
@@ -118,23 +117,6 @@ jobs:
     - name: Push Docker image
       run: |
         docker push machinmax13/ci-cd:${{ github.sha }}
-
-    # Démarrer Minikube
-    - name: Start Minikube
-      run: |
-        minikube start
-        eval $(minikube docker-env)  # Configure Docker to use Minikube's Docker daemon
-
-    # Construire l'image Docker pour Minikube
-    - name: Build Docker image for Minikube
-      run: |
-        cd express-app
-        docker build -t myapp:latest .
-
-    # Déploiement sur Kubernetes via Minikube
-    - name: Deploy to Kubernetes
-      run: |
-        kubectl apply -f ./deployment.yaml
 
     # Envoyer une notification Google Chat après le succès du déploiement
     - name: Send Success Notification to Google Chat
@@ -306,59 +288,6 @@ kubectl apply -f deployment.yaml
 ```
 
 Le déploiement de l'application se fait via le fichier de workflow GitHub Actions lorsque des changements sont poussés vers la branche `main`.
-
----
-
-## Déploiement Local avec Minikube via GitHub Actions
-
-### Prérequis
-
-Avant de déployer localement, assurez-vous d'avoir installé :
-
-- **Minikube** : Pour créer et gérer un cluster Kubernetes local.
-- **kubectl** : L'outil en ligne de commande pour interagir avec votre cluster Kubernetes.
-
-### Étapes d'installation de Minikube
-
-1. **Installer Minikube** :
-  
-
- Suivez les instructions officielles pour installer Minikube : [Guide d'installation de Minikube](https://minikube.sigs.k8s.io/docs/start/).
-
-2. **Démarrer Minikube** :
-   ```bash
-   minikube start
-   ```
-
-3. **Vérifier le statut du cluster** :
-   ```bash
-   minikube status
-   ```
-
-### Déploiement via GitHub Actions
-
-Lorsque vous souhaitez déployer votre application sur votre cluster local Minikube via GitHub Actions, assurez-vous que votre fichier `.github/workflows/node.js-ci.yml` contient la configuration suivante :
-
-```yaml
-    - name: Set up kubectl
-      run: |
-        curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
-        chmod +x ./kubectl
-        sudo mv ./kubectl /usr/local/bin/kubectl
-
-    - name: Start Minikube
-      run: minikube start
-
-    - name: Set Minikube Docker environment
-      run: eval $(minikube docker-env)
-
-    - name: Build Docker image for Minikube
-      run: |
-        docker build -t myapp:latest ./express-app
-
-    - name: Deploy to Minikube
-      run: kubectl apply -f ./k8s/deployment.yaml
-```
 
 ---
 
