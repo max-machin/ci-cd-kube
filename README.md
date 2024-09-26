@@ -249,7 +249,7 @@ Pour vous connecter à Docker Hub à partir de votre pipeline GitHub Actions, vo
 4. Cliquez sur **New repository secret**.
 5. Ajoutez les secrets suivants :
    - `DOCKER_USERNAME` : Votre nom d'utilisateur Docker Hub.
-   - `DOCKER_PASSWORD` : Votre mot de passe Docker Hub. 
+   - `DOCKER_PASSWORD` : Votre mot de passe Docker Hub.  
 
 Assurez-vous de nommer ces secrets exactement comme mentionné ci-dessus, car ils seront référencés dans le fichier de workflow.
 
