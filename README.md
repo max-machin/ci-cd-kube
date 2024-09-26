@@ -1,8 +1,6 @@
 # Projet CI/CD avec Docker et Kubernetes
 
-Ce projet a pour objectif de mettre en place une pipeline d'intégration continue (CI) et de déploiement continu (CD) utilisant **GitHub Actions**.
-
-L'application est développée avec Node.js et Express, et est contenue dans une image Docker qui sera déployée sur une infrastructure Kubernetes.
+Ce projet a pour objectif de mettre en place une pipeline d'intégration continue (CI) et de déploiement continu (CD) utilisant **GitHub Actions**. L'application est développée avec Node.js et Express, et est contenue dans une image Docker qui sera déployée sur une infrastructure Kubernetes.
 
 La pipeline sera déclenchée automatiquement à chaque push sur la branche `main` et lors de la création d'un tag Git, garantissant ainsi une intégration fluide et efficace tout au long du développement du projet.
 
@@ -16,6 +14,7 @@ La pipeline sera déclenchée automatiquement à chaque push sur la branche `mai
 - [Configuration de Docker](#configuration-de-docker)
 - [Déploiement sur Kubernetes](#déploiement-sur-kubernetes)
 - [Workflow GitHub Actions](#workflow-github-actions)
+- [Ajout de Secrets Docker Hub](#ajout-de-secrets-docker-hub)
 
 ## Introduction
 
@@ -33,13 +32,12 @@ Dans ce projet, vous allez configurer une pipeline CI/CD qui permettra d'automat
 
 6. **Déploiement sur l'infrastructure Kubernetes** : Les fichiers de configuration pour déployer l'image Docker seront créés et appliqués sur l'infrastructure Kubernetes fournie, avec une vérification du bon fonctionnement de l'application.
 
-
 ## Prérequis
 
 - Node.js (version 16 ou supérieure)
 - Docker
 - Kubernetes (ou Minikube pour le développement local)
-- GitHub pour le gestion de version et les actions CI/CD
+- GitHub pour la gestion de version et les actions CI/CD
 
 ## Structure du Projet
 
@@ -103,7 +101,7 @@ FROM node:16
 WORKDIR /usr/src/app
 
 # Copier les fichiers de dépendances
-COPY package*.json ./
+COPY package*.json ./ 
 
 # Installer les dépendances
 RUN npm install
@@ -241,14 +239,29 @@ jobs:
         kubectl apply -f ./k8s/deployment.yaml
 ```
 
+## Ajout de Secrets Docker Hub
+
+Pour vous connecter à Docker Hub à partir de votre pipeline GitHub Actions, vous devez ajouter des secrets à votre dépôt GitHub. Voici comment faire :
+
+1. Accédez à votre dépôt sur GitHub.
+2. Cliquez sur l'onglet **Settings** (paramètres).
+3. Dans le menu de gauche, sélectionnez **Secrets and variables** puis cliquez sur **Actions**.
+4. Cliquez sur **New repository secret**.
+5. Ajoutez les secrets suivants :
+   - `DOCKER_USERNAME` : Votre nom d'utilisateur Docker Hub.
+   - `DOCKER_PASSWORD` : Votre mot de passe Docker Hub.
+
+Assurez-vous de nommer ces secrets exactement comme mentionné ci-dessus, car ils seront référencés dans le fichier de workflow.
+
 ## Conclusion
 
-Ce projet illustre le processus de mise en place d'une pipeline CI/CD avec Docker et Kubernetes. Il est essentiel de s'assurer que chaque étape fonctionne correctement afin d'automatiser le déploiement de l'app.
+Ce projet illustre le processus de mise en place d'une pipeline CI/CD avec Docker et Kubernetes. Il est essentiel de s'assurer que chaque étape fonctionne correctement afin d'automatiser le déploiement de l'application.
 
-```
+ du projet.
 
 ### Notes Importantes :
 - **Remplacez** `myusername/myapp` par votre nom d'utilisateur et le nom de votre application.
-- **Ajoutez** les secrets nécessaires (comme `DOCKER_USERNAME` et `DOCKER_PASSWORD`) à votre dépôt GitHub pour vous connecter à Docker Hub.
 - **Personnalisez** ce README selon vos besoins et les détails spécifiques de votre projet.
+
+---
 
