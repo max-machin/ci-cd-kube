@@ -30,3 +30,63 @@ jobs:
     - name: Run Tests
       working-directory: ./express-app
       run: npm test
+
+    - name: Build Docker image
+      run: |
+        docker build -t machinmax13/ci-cd:${{ github.sha }} ./express-app
+
+    - name: Run Docker container for testing
+      run: |
+        docker run -d --name ci-cd-test -p 8080:8080 machinmax13/ci-cd:${{ github.sha }}
+        sleep 5 # Attendre que l'application se lance
+        curl -f http://localhost:8080 || exit 1 # Vérifier si l'application répond
+        docker stop ci-cd-test
+        docker rm ci-cd-test
+
+    - name: Log in to Docker Hub
+      run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+    - name: Push Docker image
+      run: |
+        docker push machinmax13/ci-cd:${{ github.sha }}
+
+    # # Installer kubectl
+    # - name: Set up kubectl
+    #   run: |
+    #     curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
+    #     chmod +x ./kubectl
+    #     sudo mv ./kubectl /usr/local/bin/kubectl
+
+    # # Démarrer Minikube
+    # - name: Start Minikube
+    #   run: minikube start
+
+    # # Configurer l'environnement Docker de Minikube
+    # - name: Set Minikube Docker environment
+    #   run: eval $(minikube docker-env)
+
+    # # Construire l'image Docker pour Minikube
+    # - name: Build Docker image for Minikube
+    #   run: |
+    #     docker build -t machinmax13/ci-cd:${{ github.sha }} ./express-app  # Utilisez le même tag
+
+    # # Déploiement sur Kubernetes via Minikube
+    # - name: Deploy to Minikube
+    #   run: |
+    #     kubectl apply -f ./k8s/deployment.yaml
+
+    # Envoyer une notification Google Chat après le succès du déploiement
+    - name: Send Success Notification to Google Chat
+      if: success()
+      run: |
+        curl -X POST -H 'Content-Type: application/json' \
+        -d '{"text": "✅ Déploiement réussi pour le commit ${{ github.sha }} sur la branche ${{ github.ref_name }}."}' \
+        "${{ secrets.GOOGLE_CHAT_WEBHOOK }}"
+
+    # Envoyer une notification Google Chat en cas d'échec de la pipeline
+    - name: Send Failure Notification to Google Chat
+      if: failure()
+      run: |
+        curl -X POST -H 'Content-Type: application/json' \
+        -d '{"text": "❌ Échec du déploiement pour le commit ${{ github.sha }} sur la branche ${{ github.ref_name }}. Vérifiez les logs pour plus de détails."}' \
+        "${{ secrets.GOOGLE_CHAT_WEBHOOK }}"
