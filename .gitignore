@@ -4,3 +4,5 @@ node_modules
 # Ignorer les fichiers de logs et environnement
 npm-debug.log
 .env
+
+go-app/minio-tools/minio.exe
