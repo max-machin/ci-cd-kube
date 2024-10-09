@@ -1,7 +1,7 @@
 # Projet CI/CD avec Docker et Kubernetes
 
 Ce projet a pour objectif de mettre en place une pipeline d'intégration continue (CI) et de déploiement continu (CD) utilisant **GitHub Actions**.  
-L'application est développée avec **Node.js** et **Express**, contenue dans une image **Docker**, et déployée sur une infrastructure **Kubernetes**.
+L'application est développée avec **Go**, contenue dans une image **Docker**, et déployée sur une infrastructure **Kubernetes**.
 
 ## Table des Matières
 - [Introduction](#introduction)
@@ -10,7 +10,6 @@ L'application est développée avec **Node.js** et **Express**, contenue dans un
 - [Workflow GitHub Actions](#workflow-github-actions)
 - [Ajout de Secrets Docker Hub](#ajout-de-secrets-docker-hub)
 - [Construction de l'Image Docker](#construction-de-limage-docker)
-- [Exécution de l'Application Localement](#exécution-de-lapplication-localement)
 - [Tests de l'Application](#tests-de-lapplication)
 - [Configuration de la Notification Google Chat](#configuration-de-la-notification-google-chat)
 - [Déploiement sur Kubernetes](#déploiement-sur-kubernetes)
@@ -20,7 +19,7 @@ L'application est développée avec **Node.js** et **Express**, contenue dans un
 
 ## Introduction
 
-Ce projet met en œuvre une pipeline CI/CD complète pour une application Node.js. La pipeline prend en charge les fonctionnalités suivantes :
+Ce projet met en œuvre une pipeline CI/CD complète pour une application Go. La pipeline prend en charge les fonctionnalités suivantes :
 1. **Récupération du code** : Déclenchée à chaque `push` ou création de `tag` sur la branche `main`.
 2. **Exécution des tests** : Les tests unitaires s'exécutent automatiquement. En cas d'échec, la pipeline est arrêtée.
 3. **Construction de l'image Docker** : Création d'une image Docker pour l'application.
@@ -33,7 +32,7 @@ Ce projet met en œuvre une pipeline CI/CD complète pour une application Node.j
 ## Prérequis
 
 Avant de démarrer, vous devez installer :
-- **Node.js** (version 16 ou supérieure)
+- **Go** (version 1.23)
 - **Docker**
 - **Kubernetes** (ou un cluster Kubernetes en nuage)
 - **GitHub** pour la gestion des versions et l'intégration CI/CD
@@ -45,12 +44,9 @@ Avant de démarrer, vous devez installer :
 
 ```
 .
-├── express-app
-│   ├── index.js
-│   ├── package.json
-│   ├── tests
-│   │   └── test.js
-│   └── package-lock.json
+├── go-app
+│   ├── main.go
+│   └── go.sum
 ├── .github
 │   └── workflows
 │       └── ci-cd.yml
@@ -66,7 +62,7 @@ Avant de démarrer, vous devez installer :
 Le fichier `.github/workflows/ci-cd.yml` automatise l'intégration et le déploiement. Voici un exemple de workflow :
 
 ```yaml
-name: Node.js CI
+name: Go CI
 
 on:
   push:
@@ -80,43 +76,83 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [16]  # Choisir la version de Node.js que tu veux tester
+        go-version: [1.23]
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v2
+    - name: Setup Go
+      uses: actions/setup-go@v2
       with:
-        node-version: ${{ matrix.node-version }}
+        go-version: ${{ matrix.go-version }}
 
+    # Installer les dépendances
     - name: Install dependencies
-      working-directory: ./express-app
-      run: npm ci
+      run: |
+        cd go-app
+        go mod tidy  # Nettoie les dépendances et les met à jour
 
-    - name: Run Tests
-      working-directory: ./express-app
-      run: npm test
+    # Compiler l'application
+    - name: Build Go application
+      run: |
+        cd go-app
+        go build -o myapp ./main.go  # Remplacez ./main.go par le chemin de votre fichier principal
 
+    # Tester l'application Go
+    - name: Run Go tests
+      run: |
+        cd go-app
+        go test ./...  # Exécute les tests sur tous les packages
+
+    # Construire une image Docker
     - name: Build Docker image
       run: |
-        docker build -t machinmax13/ci-cd:${{ github.sha }} ./express-app
+        docker build -t machinmax13/ci-cd:${{ github.sha }} -f go-app/Dockerfile ./go-app
 
+    # Tester le conteneur Docker localement
     - name: Run Docker container for testing
       run: |
-        docker run -d --name ci-cd-test -p 8080:8080 machinmax13/ci-cd:${{ github.sha }}
+        docker run -d --name ci-cd-test -p 8080:3000 machinmax13/ci-cd:${{ github.sha }}
         sleep 5 # Attendre que l'application se lance
-        curl -f http://localhost:8080 || exit 1 # Vérifier si l'application répond
+        curl -f http://localhost:8080 || exit 1 
         docker stop ci-cd-test
         docker rm ci-cd-test
 
+    # Connexion à Docker Hub
     - name: Log in to Docker Hub
       run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
+    # Pousser l'image Docker sur Docker Hub
     - name: Push Docker image
       run: |
         docker push machinmax13/ci-cd:${{ github.sha }}
+
+
+    # # Installer kubectl
+    # - name: Set up kubectl
+    #   run: |
+    #     curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
+    #     chmod +x ./kubectl
+    #     sudo mv ./kubectl /usr/local/bin/kubectl
+
+    # # Démarrer Minikube
+    # - name: Start Minikube
+    #   run: minikube start
+
+    # # Configurer l'environnement Docker de Minikube
+    # - name: Set Minikube Docker environment
+    #   run: eval $(minikube docker-env)
+
+    # # Construire l'image Docker pour Minikube
+    # - name: Build Docker image for Minikube
+    #   run: |
+    #     docker build -t machinmax13/ci-cd:${{ github.sha }} ./express-app  # Utilisez le même tag
+
+    # # Déploiement sur Kubernetes via Minikube
+    # - name: Deploy to Minikube
+    #   run: |
+    #     kubectl apply -f ./k8s/deployment.yaml
 
     # Envoyer une notification Google Chat après le succès du déploiement
     - name: Send Success Notification to Google Chat
@@ -152,58 +188,36 @@ jobs:
 Créez un fichier `Dockerfile` à la racine de votre projet :
 
 ```dockerfile
-# Utiliser une image officielle de Node.js
-FROM node:16
+# Étape 1 : Construction du binaire Go
+FROM golang:1.23-alpine as builder
 
-# Créer un répertoire de travail pour l'application
-WORKDIR /usr/src/app
+# Installer des dépendances pour Go
+RUN apk add --no-cache git
 
-# Copier les fichiers de dépendances
-COPY package*.json ./ 
+# Définir le répertoire de travail dans le container
+WORKDIR /app
 
-# Installer les dépendances
-RUN npm install
-
-# Copier le reste de l'application
+# Copier les fichiers du projet Go dans le container
 COPY . .
 
-# Exposer le port sur lequel l'application s'exécute
-EXPOSE 8080
+# Télécharger les dépendances et compiler l'application
+RUN go mod download
+RUN go build -o main .
 
-# Commande pour démarrer l'application
-CMD ["node", "index.js"]
-```
+# Étape 2 : Créer l'image finale
+FROM alpine:latest
 
----
+# Définir le répertoire de travail
+WORKDIR /root/
 
-## Exécution de l'Application Localement
+# Copier le binaire Go de l'image builder
+COPY --from=builder /app/main .
 
-1. Clonez le dépôt :
-   ```bash
-   git clone https://github.com/prenom-nom/ci-cd-kube.git
-   cd ci-cd-kube/express-app
-   ```
+# Exposer le port de l'API
+EXPOSE 3000
 
-2. Installez les dépendances :
-   ```bash
-   npm install
-   ```
-
-3. Exécutez l'application :
-   ```bash
-   node index.js
-   ```
-
-4. Accédez à l'application sur [http://localhost:8080](http://localhost:8080).
-
----
-
-## Tests de l'Application 
-
-Pour exécuter les tests localement :
-
-```bash
-npm test
+# Lancer l'application
+CMD ["./main"]
 ```
 
 ---
