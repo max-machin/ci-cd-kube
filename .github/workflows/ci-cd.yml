@@ -51,7 +51,7 @@ jobs:
       run: |
         docker run -d --name ci-cd-test -p 8080:3000 machinmax13/ci-cd:${{ github.sha }}
         sleep 5 # Attendre que l'application se lance
-        curl -f http://localhost:3000 || exit 1 # Vérifier si l'application répond
+        curl -f http://localhost:8080 || exit 1 
         docker stop ci-cd-test
         docker rm ci-cd-test
 
