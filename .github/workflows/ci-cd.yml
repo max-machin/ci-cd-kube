@@ -44,7 +44,7 @@ jobs:
     # Construire une image Docker
     - name: Build Docker image
       run: |
-        docker build -t machinmax13/ci-cd:${{ github.sha }} -f Dockerfile ./go-app  # Spécifie le Dockerfile s'il n'est pas à la racine
+        docker build -t machinmax13/ci-cd:${{ github.sha }} -f go-app/Dockerfile ./go-app
 
     # Tester le conteneur Docker localement
     - name: Run Docker container for testing
