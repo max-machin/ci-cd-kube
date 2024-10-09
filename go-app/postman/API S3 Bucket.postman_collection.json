@@ -1,0 +1,253 @@
+{
+	"info": {
+		"_postman_id": "e1521455-7548-4f9a-bb2d-b4cb6758594e",
+		"name": "API S3 Bucket",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "20706812"
+	},
+	"item": [
+		{
+			"name": "Create Bucket",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<CreateBucketConfiguration xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">\r\n   <LocationConstraint>string</LocationConstraint>\r\n   <Location>\r\n      <Name>string</Name>\r\n      <Type>string</Type>\r\n   </Location>\r\n   <Bucket>\r\n      <DataRedundancy>string</DataRedundancy>\r\n      <Type>string</Type>\r\n   </Bucket>\r\n</CreateBucketConfiguration>",
+					"options": {
+						"raw": {
+							"language": "xml"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:3000/buckets/TestMax4",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "3000",
+					"path": [
+						"buckets",
+						"TestMax4"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Bucket",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:3000/buckets/TestMax4",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "3000",
+					"path": [
+						"buckets",
+						"TestMax4"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "List Objects",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:3000/buckets/TestMax1/objects",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "3000",
+					"path": [
+						"buckets",
+						"TestMax1",
+						"objects"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Upload Object",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "/C:/Users/Max/Downloads/data.csv"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://127.0.0.1:3000/buckets/TestMax3/data.csv",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "3000",
+					"path": [
+						"buckets",
+						"TestMax3",
+						"data.csv"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Object",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:3000/buckets/TestMax3/data.csv",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "3000",
+					"path": [
+						"buckets",
+						"TestMax3",
+						"data.csv"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Objects",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<Delete>\r\n    <Object>\r\n        <Key>sample1.txt</Key>\r\n    </Object>\r\n    <Object>\r\n        <Key>sample2.txt</Key>\r\n    </Object>\r\n    <Quiet>false</Quiet>\r\n</Delete>\r\n",
+					"options": {
+						"raw": {
+							"language": "xml"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:3000/buckets/TestMax1/objects/delete",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "3000",
+					"path": [
+						"buckets",
+						"TestMax1",
+						"objects",
+						"delete"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "List Buckets",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:3000/buckets",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "3000",
+					"path": [
+						"buckets"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Add Object",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:3000/buckets/TestMax1/objects/sample1.txt",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "3000",
+					"path": [
+						"buckets",
+						"TestMax1",
+						"objects",
+						"sample1.txt"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Download Object",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:3000/buckets/TestMax1/objects/sample1.txt",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "3000",
+					"path": [
+						"buckets",
+						"TestMax1",
+						"objects",
+						"sample1.txt"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

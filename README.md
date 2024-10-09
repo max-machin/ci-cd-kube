@@ -1,142 +1,264 @@
 # Projet CI/CD avec Docker et Kubernetes
 
-Ce projet a pour objectif de mettre en place une pipeline d'intégration continue (CI) et de déploiement continu (CD) utilisant **GitHub Actions**. L'application est développée avec Node.js et Express, et est contenue dans une image Docker qui sera déployée sur une infrastructure Kubernetes.
-
-La pipeline sera déclenchée automatiquement à chaque push sur la branche `main` et lors de la création d'un tag Git, garantissant ainsi une intégration fluide et efficace tout au long du développement du projet.
+Ce projet a pour objectif de mettre en place une pipeline d'intégration continue (CI) et de déploiement continu (CD) utilisant **GitHub Actions**.  
+L'application est développée avec **Go**, contenue dans une image **Docker**, et déployée sur une infrastructure **Kubernetes**.
 
 ## Table des Matières
 - [Introduction](#introduction)
 - [Prérequis](#prérequis)
 - [Structure du Projet](#structure-du-projet)
-- [Exécution de l'Application Localement](#exécution-de-lapplication-localement)
-- [Tests de l'Application](#tests-de-lapplication)
-- [Construction de l'Image Docker](#construction-de-limage-docker)
-- [Configuration de Docker](#configuration-de-docker)
-- [Déploiement sur Kubernetes](#déploiement-sur-kubernetes)
 - [Workflow GitHub Actions](#workflow-github-actions)
 - [Ajout de Secrets Docker Hub](#ajout-de-secrets-docker-hub)
+- [Construction de l'Image Docker](#construction-de-limage-docker)
+- [Tests de l'Application](#tests-de-lapplication)
+- [Configuration de la Notification Google Chat](#configuration-de-la-notification-google-chat)
+- [Déploiement sur Kubernetes](#déploiement-sur-kubernetes)
+- [Conclusion](#conclusion)
+
+---
 
 ## Introduction
 
-Dans ce projet, vous allez configurer une pipeline CI/CD qui permettra d'automatiser le cycle de vie d'une application. L'objectif est d'implémenter les étapes suivantes :
+Ce projet met en œuvre une pipeline CI/CD complète pour une application Go. La pipeline prend en charge les fonctionnalités suivantes :
+1. **Récupération du code** : Déclenchée à chaque `push` ou création de `tag` sur la branche `main`.
+2. **Exécution des tests** : Les tests unitaires s'exécutent automatiquement. En cas d'échec, la pipeline est arrêtée.
+3. **Construction de l'image Docker** : Création d'une image Docker pour l'application.
+4. **Push de l'image Docker** : L'image est poussée vers Docker Hub ou GitHub Container Registry.
+5. **Envoi de notifications** : Utilisation de Google Chat pour notifier les succès ou échecs de la pipeline.
+6. **Déploiement sur Kubernetes** : L'application est déployée automatiquement sur un cluster Kubernetes via GitHub Actions.
 
-1. **Récupération du code** : Chaque push sur la branche `main` ou création d'un tag Git déclenche la pipeline, récupérant le code source.
-  
-2. **Exécution des tests** : Avant toute construction, des tests seront lancés pour s'assurer du bon fonctionnement de l'application. En cas d'échec d'un test, la pipeline s'arrêtera immédiatement.
-
-3. **Construction de l'image Docker** : Une image Docker sera construite, adaptée à l'environnement de développement ou de production selon la branche ou le tag.
-
-4. **Push de l'image Docker** : L'image Docker sera poussée vers un registre tel que GitHub Container Registry ou Docker Hub, en utilisant des tags pour distinguer les versions de développement et de production.
-
-5. **Envoi de notifications** : À chaque exécution de la pipeline, des notifications seront envoyées via Google Chat, contenant des informations clés comme le commit responsable et le statut de la pipeline.
-
-6. **Déploiement sur l'infrastructure Kubernetes** : Les fichiers de configuration pour déployer l'image Docker seront créés et appliqués sur l'infrastructure Kubernetes fournie, avec une vérification du bon fonctionnement de l'application.
+---
 
 ## Prérequis
 
-- Node.js (version 16 ou supérieure)
-- Docker
-- Kubernetes (ou Minikube pour le développement local)
-- GitHub pour la gestion de version et les actions CI/CD
+Avant de démarrer, vous devez installer :
+- **Go** (version 1.23)
+- **Docker**
+- **Kubernetes** (ou un cluster Kubernetes en nuage)
+- **GitHub** pour la gestion des versions et l'intégration CI/CD
+- **kubectl** pour interagir avec votre cluster Kubernetes
+
+---
 
 ## Structure du Projet
 
 ```
 .
-├── express-app
-│   ├── index.js
-│   ├── package.json
-│   ├── tests
-│   │   └── test.js
-│   └── package-lock.json
+├── go-app
+│   ├── main.go
+│   └── go.sum
 ├── .github
 │   └── workflows
-│       └── node.js-ci.yml
+│       └── ci-cd.yml
 ├── .gitignore
 ├── README.md
 └── Dockerfile
 ```
 
-## Exécution de l'Application Localement
+---
 
-Pour exécuter l'application localement, suivez ces étapes :
+## Workflow GitHub Actions
 
-1. Clonez le dépôt :
-   ```bash
-   git clone https://github.com/prenom-nom/ci-cd-kube.git
-   cd ci-cd-kube/express-app
-   ```
+Le fichier `.github/workflows/ci-cd.yml` automatise l'intégration et le déploiement. Voici un exemple de workflow :
 
-2. Installez les dépendances :
-   ```bash
-   npm install
-   ```
+```yaml
+name: Go CI
 
-3. Exécutez l'application :
-   ```bash
-   node index.js
-   ```
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
-4. Accédez à l'application dans votre navigateur à l'adresse [http://localhost:8080](http://localhost:8080).
+jobs:
+  build:
+    runs-on: ubuntu-latest
 
-## Tests de l'Application
+    strategy:
+      matrix:
+        go-version: [1.23]
 
-Pour exécuter les tests, assurez-vous que les dépendances sont installées, puis exécutez :
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-```bash
-npm test
+    - name: Setup Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: ${{ matrix.go-version }}
+
+    # Installer les dépendances
+    - name: Install dependencies
+      run: |
+        cd go-app
+        go mod tidy  # Nettoie les dépendances et les met à jour
+
+    # Compiler l'application
+    - name: Build Go application
+      run: |
+        cd go-app
+        go build -o myapp ./main.go  # Remplacez ./main.go par le chemin de votre fichier principal
+
+    # Tester l'application Go
+    - name: Run Go tests
+      run: |
+        cd go-app
+        go test ./...  # Exécute les tests sur tous les packages
+
+    # Construire une image Docker
+    - name: Build Docker image
+      run: |
+        docker build -t machinmax13/ci-cd:${{ github.sha }} -f go-app/Dockerfile ./go-app
+
+    # Tester le conteneur Docker localement
+    - name: Run Docker container for testing
+      run: |
+        docker run -d --name ci-cd-test -p 8080:3000 machinmax13/ci-cd:${{ github.sha }}
+        sleep 5 # Attendre que l'application se lance
+        curl -f http://localhost:8080 || exit 1 
+        docker stop ci-cd-test
+        docker rm ci-cd-test
+
+    # Connexion à Docker Hub
+    - name: Log in to Docker Hub
+      run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+    # Pousser l'image Docker sur Docker Hub
+    - name: Push Docker image
+      run: |
+        docker push machinmax13/ci-cd:${{ github.sha }}
+
+
+    # # Installer kubectl
+    # - name: Set up kubectl
+    #   run: |
+    #     curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
+    #     chmod +x ./kubectl
+    #     sudo mv ./kubectl /usr/local/bin/kubectl
+
+    # # Démarrer Minikube
+    # - name: Start Minikube
+    #   run: minikube start
+
+    # # Configurer l'environnement Docker de Minikube
+    # - name: Set Minikube Docker environment
+    #   run: eval $(minikube docker-env)
+
+    # # Construire l'image Docker pour Minikube
+    # - name: Build Docker image for Minikube
+    #   run: |
+    #     docker build -t machinmax13/ci-cd:${{ github.sha }} ./express-app  # Utilisez le même tag
+
+    # # Déploiement sur Kubernetes via Minikube
+    # - name: Deploy to Minikube
+    #   run: |
+    #     kubectl apply -f ./k8s/deployment.yaml
+
+    # Envoyer une notification Google Chat après le succès du déploiement
+    - name: Send Success Notification to Google Chat
+      if: success()
+      run: |
+        curl -X POST -H 'Content-Type: application/json' \
+        -d '{"text": "✅ Déploiement réussi pour le commit ${{ github.sha }} sur la branche ${{ github.ref_name }}."}' \
+        "${{ secrets.GOOGLE_CHAT_WEBHOOK }}"
+
+    # Envoyer une notification Google Chat en cas d'échec de la pipeline
+    - name: Send Failure Notification to Google Chat
+      if: failure()
+      run: |
+        curl -X POST -H 'Content-Type: application/json' \
+        -d '{"text": "❌ Échec du déploiement pour le commit ${{ github.sha }} sur la branche ${{ github.ref_name }}. Vérifiez les logs pour plus de détails."}' \
+        "${{ secrets.GOOGLE_CHAT_WEBHOOK }}"
+
 ```
+
+---
+
+## Ajout de Secrets Docker Hub
+
+1. Allez dans **Settings** > **Secrets and variables** > **Actions**.
+2. Cliquez sur **New repository secret** et ajoutez les secrets :
+   - `DOCKER_USERNAME`
+   - `DOCKER_PASSWORD`
+
+---
 
 ## Construction de l'Image Docker
 
-Pour construire l'image Docker de votre application, créez un fichier `Dockerfile` à la racine de votre projet avec le contenu suivant :
-
-### Dockerfile
+Créez un fichier `Dockerfile` à la racine de votre projet :
 
 ```dockerfile
-# Utiliser une image de base officielle de Node.js
-FROM node:16
+# Étape 1 : Construction du binaire Go
+FROM golang:1.23-alpine as builder
 
-# Créer un répertoire de travail pour l'application
-WORKDIR /usr/src/app
+# Installer des dépendances pour Go
+RUN apk add --no-cache git
 
-# Copier les fichiers de dépendances
-COPY package*.json ./ 
+# Définir le répertoire de travail dans le container
+WORKDIR /app
 
-# Installer les dépendances
-RUN npm install
-
-# Copier le reste de l'application
+# Copier les fichiers du projet Go dans le container
 COPY . .
 
-# Exposer le port sur lequel l'application s'exécute
-EXPOSE 8080
+# Télécharger les dépendances et compiler l'application
+RUN go mod download
+RUN go build -o main .
 
-# Commande pour démarrer l'application
-CMD ["node", "index.js"]
+# Étape 2 : Créer l'image finale
+FROM alpine:latest
+
+# Définir le répertoire de travail
+WORKDIR /root/
+
+# Copier le binaire Go de l'image builder
+COPY --from=builder /app/main .
+
+# Exposer le port de l'API
+EXPOSE 3000
+
+# Lancer l'application
+CMD ["./main"]
 ```
 
-## Configuration de Docker
+---
 
-Pour construire l'image Docker, exécutez les commandes suivantes à la racine de votre projet :
+## Configuration de la Notification Google Chat
 
-1. **Construire l'image Docker :**
-   ```bash
-   docker build -t myusername/myapp:latest .
-   ```
+### Étape 1 : Créer un Webhook Google Chat
 
-2. **Exécuter l'image Docker :**
-   ```bash
-   docker run -p 8080:8080 myusername/myapp:latest
-   ```
+1. Accédez à **Google Chat** et créez un espace (ou utilisez-en un existant).
+2. Cliquez sur le nom de l'espace, puis allez dans **Gérer les Webhooks** et créez-en un nouveau. Copiez l'URL.
 
-Accédez à l'application dans votre navigateur à l'adresse [http://localhost:8080](http://localhost:8080) pour vérifier qu'elle fonctionne comme prévu.
+### Étape 2 : Ajouter le Webhook à GitHub Secrets
+
+1. Allez dans **Settings** > **Secrets and variables** > **Actions**.
+2. Ajoutez un secret nommé `GOOGLE_CHAT_WEBHOOK` avec l'URL du webhook.
+
+### Étape 3 : Intégrer dans le Workflow GitHub Actions
+
+Ajoutez les étapes suivantes pour notifier Google Chat :
+
+```yaml
+- name: Send Success Notification to Google Chat
+  if: success()
+  run: |
+    curl -X POST -H 'Content-Type: application/json' \
+    -d '{"text": "✅ Déploiement réussi pour le commit ${{ github.sha }} sur la branche ${{ github.ref_name }}."}' \
+    "${{ secrets.GOOGLE_CHAT_WEBHOOK }}"
+
+- name: Send Failure Notification to Google Chat
+  if: failure()
+  run: |
+    curl -X POST -H 'Content-Type: application/json' \
+    -d '{"text": "❌ Échec du déploiement pour le commit ${{ github.sha }} sur la branche ${{ github.ref_name }}. Vérifiez les logs."}' \
+    "${{ secrets.GOOGLE_CHAT_WEBHOOK }}"
+```
+
+---
 
 ## Déploiement sur Kubernetes
 
-Pour déployer votre application sur Kubernetes, vous devrez créer un fichier de configuration Kubernetes (par exemple `deployment.yaml`) qui définit le déploiement et le service. Voici un exemple de fichier `deployment.yaml` :
-
-### deployment.yaml
+Pour déployer votre application sur Kubernetes, créez un fichier `deployment.yaml` :
 
 ```yaml
 apiVersion: apps/v1
@@ -154,10 +276,10 @@ spec:
         app: myapp
     spec:
       containers:
-      - name: myapp
-        image: myusername/myapp:latest
-        ports:
-        - containerPort: 8080
+        - name: myapp
+          image: myapp:latest
+          ports:
+            - containerPort: 8080
 ---
 apiVersion: v1
 kind: Service
@@ -166,102 +288,27 @@ metadata:
 spec:
   type: NodePort
   ports:
-  - port: 8080
-    targetPort: 8080
-    nodePort: 30000
+    - port: 8080
+      targetPort: 8080
+      nodePort: 30000
   selector:
     app: myapp
 ```
 
-Pour appliquer cette configuration, exécutez :
+Appliquez la configuration avec :
 
 ```bash
 kubectl apply -f deployment.yaml
 ```
 
-## Workflow GitHub Actions
+Le déploiement de l'application se fait via le fichier de workflow GitHub Actions lorsque des changements sont poussés vers la branche `main`.
 
-Le fichier de workflow GitHub Actions (situé dans `.github/workflows/node.js-ci.yml`) est configuré pour automatiser le processus de CI/CD. Voici un exemple de contenu :
-
-### node.js-ci.yml
-
-```yaml
-name: Node.js CI
-
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v2
-      with:
-        node-version: 16
-
-    - name: Install dependencies
-      working-directory: ./express-app
-      run: npm ci
-
-    - name: Run Tests
-      working-directory: ./express-app
-      run: npm test
-
-    - name: Build Docker image
-      run: |
-        docker build -t myusername/myapp:${{ github.sha }} ./express-app
-
-    - name: Run Docker container for testing
-      run: |
-        docker run -d --name myapp-test -p 8080:8080 myusername/myapp:${{ github.sha }}
-        sleep 5 # Attendre que l'application se lance
-        curl -f http://localhost:8080 || exit 1 # Vérifier si l'application répond
-        docker stop myapp-test
-        docker rm myapp-test
-
-    - name: Log in to Docker Hub
-      run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-
-    - name: Push Docker image
-      run: |
-        docker push myusername/myapp:${{ github.sha }}
-
-    - name: Deploy to Kubernetes
-      run: |
-        kubectl apply -f ./k8s/deployment.yaml
-```
-
-## Ajout de Secrets Docker Hub
-
-Pour vous connecter à Docker Hub à partir de votre pipeline GitHub Actions, vous devez ajouter des secrets à votre dépôt GitHub. Voici comment faire :
-
-1. Accédez à votre dépôt sur GitHub.
-2. Cliquez sur l'onglet **Settings** (paramètres).
-3. Dans le menu de gauche, sélectionnez **Secrets and variables** puis cliquez sur **Actions**.
-4. Cliquez sur **New repository secret**.
-5. Ajoutez les secrets suivants :
-   - `DOCKER_USERNAME` : Votre nom d'utilisateur Docker Hub.
-   - `DOCKER_PASSWORD` : Votre mot de passe Docker Hub.
-
-Assurez-vous de nommer ces secrets exactement comme mentionné ci-dessus, car ils seront référencés dans le fichier de workflow.
+---
 
 ## Conclusion
 
-Ce projet illustre le processus de mise en place d'une pipeline CI/CD avec Docker et Kubernetes. Il est essentiel de s'assurer que chaque étape fonctionne correctement afin d'automatiser le déploiement de l'application.
-
- du projet.
-
-### Notes Importantes :
-- **Remplacez** `myusername/myapp` par votre nom d'utilisateur et le nom de votre application.
-- **Personnalisez** ce README selon vos besoins et les détails spécifiques de votre projet.
+Ce projet présente une configuration complète de CI/CD avec **GitHub Actions**, **Docker**, **Kubernetes**, et des notifications intégrées via **Google Chat**.  
+Chaque étape du processus est essentielle pour garantir une livraison continue et une gestion automatisée de vos applications.
 
 ---
 
