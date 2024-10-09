@@ -349,7 +349,7 @@ func GetObject(c *fiber.Ctx) error {
 	c.Set("x-amz-id-2", "sample-id")
 	c.Set("x-amz-request-id", "sample-request-id")
 	c.Set("Date", time.Now().UTC().Format(http.TimeFormat))
-	c.Set("ETag", fmt.Sprintf("\"%s\"", fileInfo.ModTime().Unix()))
+	c.Set("ETag", fmt.Sprintf("\"%d\"", fileInfo.ModTime().Unix()))
 	c.Set("Content-Length", fmt.Sprintf("%d", fileInfo.Size()))
 
 	// Log les en-têtes
